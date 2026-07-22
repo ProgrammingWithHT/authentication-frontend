@@ -1,24 +1,42 @@
-import logo from './logo.svg';
 import './App.css';
+import AuthFlowCard from './components/AuthFlowCard';
+import HeroPanel from './components/HeroPanel';
+import ProfileSecurityCard from './components/ProfileSecurityCard';
+import ResponseCard from './components/ResponseCard';
+import StatusBanner from './components/StatusBanner';
+import useAuthDashboard from './hooks/useAuthDashboard';
 
 function App() {
+  const dashboard = useAuthDashboard();
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <main className="app-shell">
+      <HeroPanel
+        apiBaseUrl={dashboard.apiBaseUrl}
+        onApiBaseUrlChange={dashboard.setApiBaseUrl}
+        sessionState={dashboard.sessionState}
+        onClearSession={dashboard.clearSession}
+        canClearSession={dashboard.canClearSession}
+      />
+
+      <StatusBanner feedback={dashboard.feedback} />
+
+      <section className="dashboard-grid">
+        <AuthFlowCard
+          register={dashboard.register}
+          login={dashboard.login}
+          verification={dashboard.verification}
+        />
+
+        <ProfileSecurityCard
+          accessToken={dashboard.accessToken}
+          profile={dashboard.profile}
+          twoFactor={dashboard.twoFactor}
+        />
+      </section>
+
+      <ResponseCard lastResponse={dashboard.lastResponse} />
+    </main>
   );
 }
 
