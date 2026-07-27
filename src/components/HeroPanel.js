@@ -11,9 +11,9 @@ function HeroPanel({
         <p className="eyebrow">React client for your NestJS auth API</p>
         <h1>Authentication Frontend</h1>
         <p className="hero-text">
-          Register a user first, sign in to open the profile section, and
-          enable 2FA from the profile security area instead of managing
-          everything from one crowded screen.
+          Move through dedicated routes for signup, login, dashboard, and
+          profile while keeping the same NestJS auth API and 2FA workflow
+          behind the scenes.
         </p>
       </div>
 

@@ -114,11 +114,18 @@ function useAuthDashboard() {
       });
       setRegisterForm(createRegisterForm());
       rememberResponse('register', response);
+      return {
+        ok: true,
+        response,
+      };
     } catch (error) {
       setFeedback({
         type: 'error',
         text: error instanceof Error ? error.message : 'Registration failed.',
       });
+      return {
+        ok: false,
+      };
     } finally {
       setActiveAction('');
     }
@@ -145,7 +152,11 @@ function useAuthDashboard() {
           type: 'info',
           text: 'Password accepted. Enter the 6-digit code to finish sign-in.',
         });
-        return;
+        return {
+          ok: true,
+          requiresTwoFactor: true,
+          response,
+        };
       }
 
       setPendingTwoFactorUserId('');
@@ -157,11 +168,20 @@ function useAuthDashboard() {
         type: 'success',
         text: `Welcome back, ${response.user.username}. Your profile section is ready.`,
       });
+      return {
+        ok: true,
+        requiresTwoFactor: false,
+        response,
+      };
     } catch (error) {
       setFeedback({
         type: 'error',
         text: error instanceof Error ? error.message : 'Login failed.',
       });
+      return {
+        ok: false,
+        requiresTwoFactor: false,
+      };
     } finally {
       setActiveAction('');
     }
@@ -188,6 +208,10 @@ function useAuthDashboard() {
         text: 'Two-factor verification complete. Opening your profile section.',
       });
       rememberResponse('verify-2fa', response);
+      return {
+        ok: true,
+        response,
+      };
     } catch (error) {
       setFeedback({
         type: 'error',
@@ -196,6 +220,9 @@ function useAuthDashboard() {
             ? error.message
             : 'Two-factor verification failed.',
       });
+      return {
+        ok: false,
+      };
     } finally {
       setActiveAction('');
     }
