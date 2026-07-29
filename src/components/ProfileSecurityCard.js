@@ -41,6 +41,10 @@ function ProfileSecurityCard({ accessToken, profile, twoFactor }) {
               <dd>{profile.data.isTwoFactorEnabled ? 'Enabled' : 'Disabled'}</dd>
             </div>
             <div>
+              <dt>Auth methods</dt>
+              <dd>{profile.data.authMethods?.join(', ') || 'local'}</dd>
+            </div>
+            <div>
               <dt>User ID</dt>
               <dd>{profile.data.id}</dd>
             </div>

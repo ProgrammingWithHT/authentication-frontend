@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react';
 import {
+  COGNITO_AUTH_PROVIDER,
   createInitialFeedback,
   createLoginForm,
   createRegisterForm,
   createTokenForm,
   DEFAULT_API_URL,
+  LOCAL_AUTH_PROVIDER,
+  PROVIDER_STORAGE_KEY,
   STORAGE_KEY,
 } from '../constants/auth';
+import { APP_ROUTES } from '../constants/routes';
 import { apiRequest } from '../utils/api';
 import { formatResponse } from '../utils/formatters';
 
@@ -19,18 +23,29 @@ function useAuthDashboard() {
   const [accessToken, setAccessToken] = useState(
     () => localStorage.getItem(STORAGE_KEY) || '',
   );
+  const [authProvider, setAuthProvider] = useState(
+    () =>
+      localStorage.getItem(PROVIDER_STORAGE_KEY) ||
+      (localStorage.getItem(STORAGE_KEY) ? LOCAL_AUTH_PROVIDER : ''),
+  );
   const [profile, setProfile] = useState(null);
   const [pendingTwoFactorUserId, setPendingTwoFactorUserId] = useState('');
+  const [pendingAuthProvider, setPendingAuthProvider] = useState('');
   const [setupData, setSetupData] = useState(null);
   const [feedback, setFeedback] = useState(createInitialFeedback);
   const [lastResponse, setLastResponse] = useState('No API calls yet.');
   const [activeAction, setActiveAction] = useState('');
+  const [redirectRoute, setRedirectRoute] = useState('');
 
   const normalizedApiBaseUrl = apiBaseUrl.trim().replace(/\/+$/, '');
+  const sessionProviderLabel =
+    authProvider === COGNITO_AUTH_PROVIDER ? 'Amazon Cognito' : 'Local API';
   const sessionState = accessToken
-    ? 'Authenticated'
+    ? `Authenticated with ${sessionProviderLabel}`
     : pendingTwoFactorUserId
-      ? 'Waiting for 2FA'
+      ? pendingAuthProvider === COGNITO_AUTH_PROVIDER
+        ? 'Waiting for 2FA after Amazon Cognito'
+        : 'Waiting for 2FA'
       : 'Signed out';
 
   useEffect(() => {
@@ -41,6 +56,81 @@ function useAuthDashboard() {
 
     localStorage.removeItem(STORAGE_KEY);
   }, [accessToken]);
+
+  useEffect(() => {
+    if (accessToken && authProvider) {
+      localStorage.setItem(PROVIDER_STORAGE_KEY, authProvider);
+      return;
+    }
+
+    localStorage.removeItem(PROVIDER_STORAGE_KEY);
+  }, [accessToken, authProvider]);
+
+  useEffect(() => {
+    const currentUrl = new URL(window.location.href);
+    const token = currentUrl.searchParams.get('token');
+    const provider =
+      currentUrl.searchParams.get('provider') || COGNITO_AUTH_PROVIDER;
+    const pendingTwoFactorId = currentUrl.searchParams.get('pending2fa');
+    const flow = currentUrl.searchParams.get('flow');
+    const error = currentUrl.searchParams.get('error');
+
+    if (!token && !pendingTwoFactorId && !error) {
+      return;
+    }
+
+    if (token) {
+      setAccessToken(token);
+      setAuthProvider(provider);
+      setPendingTwoFactorUserId('');
+      setPendingAuthProvider('');
+      setVerifyForm(createTokenForm());
+      setEnableForm(createTokenForm());
+      setSetupData(null);
+      setFeedback({
+        type: 'success',
+        text:
+          flow === 'signup'
+            ? 'Amazon Cognito signup completed. Opening your profile section.'
+            : 'Amazon Cognito sign-in completed. Opening your profile section.',
+      });
+      rememberResponse('cognito', {
+        flow,
+        provider,
+        token,
+      });
+      setRedirectRoute(APP_ROUTES.profile);
+    } else if (pendingTwoFactorId) {
+      setAccessToken('');
+      setAuthProvider('');
+      setPendingTwoFactorUserId(pendingTwoFactorId);
+      setPendingAuthProvider(provider);
+      setVerifyForm(createTokenForm());
+      setFeedback({
+        type: 'info',
+        text:
+          'Amazon Cognito accepted your credentials. Enter your 6-digit code to finish the local 2FA step.',
+      });
+      rememberResponse('cognito', {
+        flow,
+        provider,
+        requires2FA: true,
+        userId: pendingTwoFactorId,
+      });
+      setRedirectRoute(APP_ROUTES.login);
+    } else if (error) {
+      setFeedback({
+        type: 'error',
+        text: error,
+      });
+      rememberResponse('cognito-error', {
+        error,
+      });
+      setRedirectRoute(APP_ROUTES.login);
+    }
+
+    window.history.replaceState({}, '', currentUrl.pathname);
+  }, []);
 
   useEffect(() => {
     if (!accessToken) {
@@ -62,7 +152,9 @@ function useAuthDashboard() {
       } catch (error) {
         if (!cancelled) {
           setAccessToken('');
+          setAuthProvider('');
           setPendingTwoFactorUserId('');
+          setPendingAuthProvider('');
           setProfile(null);
           setSetupData(null);
           setFeedback({
@@ -145,7 +237,9 @@ function useAuthDashboard() {
 
       if (response.requires2FA) {
         setPendingTwoFactorUserId(response.userId);
+        setPendingAuthProvider(LOCAL_AUTH_PROVIDER);
         setAccessToken('');
+        setAuthProvider('');
         setProfile(null);
         setVerifyForm(createTokenForm());
         setFeedback({
@@ -160,7 +254,9 @@ function useAuthDashboard() {
       }
 
       setPendingTwoFactorUserId('');
+      setPendingAuthProvider('');
       setAccessToken(response.accessToken);
+      setAuthProvider(LOCAL_AUTH_PROVIDER);
       setProfile(response.user);
       setSetupData(null);
       setEnableForm(createTokenForm());
@@ -201,7 +297,9 @@ function useAuthDashboard() {
       });
 
       setAccessToken(response.accessToken);
+      setAuthProvider(pendingAuthProvider || LOCAL_AUTH_PROVIDER);
       setPendingTwoFactorUserId('');
+      setPendingAuthProvider('');
       setVerifyForm(createTokenForm());
       setFeedback({
         type: 'success',
@@ -323,27 +421,58 @@ function useAuthDashboard() {
   }
 
   function handleLogout() {
+    const currentProvider = authProvider;
+
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(PROVIDER_STORAGE_KEY);
     setAccessToken('');
+    setAuthProvider('');
     setProfile(null);
     setPendingTwoFactorUserId('');
+    setPendingAuthProvider('');
     setSetupData(null);
     setEnableForm(createTokenForm());
     setVerifyForm(createTokenForm());
+
+    if (currentProvider === COGNITO_AUTH_PROVIDER) {
+      window.location.assign(`${normalizedApiBaseUrl}/auth/cognito/logout`);
+      return;
+    }
+
     setFeedback({
       type: 'info',
       text: 'Session cleared from the browser.',
     });
   }
 
+  function consumeRedirectRoute() {
+    setRedirectRoute('');
+  }
+
+  function startCognitoLogin() {
+    window.location.assign(`${normalizedApiBaseUrl}/auth/cognito/login`);
+  }
+
+  function startCognitoSignup() {
+    window.location.assign(`${normalizedApiBaseUrl}/auth/cognito/signup`);
+  }
+
   return {
     apiBaseUrl,
     setApiBaseUrl,
+    authProvider,
     sessionState,
     canClearSession: Boolean(accessToken || pendingTwoFactorUserId),
     clearSession: handleLogout,
+    redirectRoute,
+    consumeRedirectRoute,
     feedback,
     lastResponse,
     accessToken,
+    cognito: {
+      login: startCognitoLogin,
+      signup: startCognitoSignup,
+    },
     register: {
       form: registerForm,
       updateField: (field, value) => updateForm(setRegisterForm, field, value),
@@ -359,6 +488,7 @@ function useAuthDashboard() {
     verification: {
       required: Boolean(pendingTwoFactorUserId),
       userId: pendingTwoFactorUserId,
+      provider: pendingAuthProvider,
       form: verifyForm,
       updateField: (field, value) => updateForm(setVerifyForm, field, value),
       submit: handleVerifyTwoFactor,

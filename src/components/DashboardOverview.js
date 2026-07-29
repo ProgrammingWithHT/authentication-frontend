@@ -20,6 +20,7 @@ const routeCards = [
 
 function DashboardOverview({
   accessToken,
+  authProvider,
   sessionState,
   verificationRequired,
   onNavigate,
@@ -32,6 +33,15 @@ function DashboardOverview({
     {
       label: 'Saved access token',
       value: accessToken ? 'Available' : 'Not available',
+    },
+    {
+      label: 'Active provider',
+      value:
+        authProvider === 'cognito'
+          ? 'Amazon Cognito'
+          : authProvider
+            ? 'Local API'
+            : 'Not selected yet',
     },
     {
       label: '2FA verification',
@@ -49,8 +59,9 @@ function DashboardOverview({
       </div>
 
       <p className="card-intro">
-        The authentication flow is now split into dedicated React pages, so each
-        step has its own route instead of sharing one crowded screen.
+        The auth flow now keeps the existing local API and adds Amazon Cognito,
+        so each route can offer both providers without removing your original
+        forms.
       </p>
 
       <div className="route-grid">

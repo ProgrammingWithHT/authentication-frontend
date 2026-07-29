@@ -1,4 +1,6 @@
-function LoginCard({ login, verification, onSignupNavigate }) {
+function LoginCard({ login, verification, cognito, onSignupNavigate }) {
+  const isCognitoVerification = verification.provider === 'cognito';
+
   return (
     <article className="card">
       <div className="card-heading">
@@ -9,8 +11,8 @@ function LoginCard({ login, verification, onSignupNavigate }) {
       </div>
 
       <p className="card-intro">
-        Use your username or email to log in. If the account already has
-        two-factor authentication enabled, the verification step appears below.
+        Keep your current username or email login, and add Amazon Cognito as a
+        second sign-in option on the same page.
       </p>
 
       <form className="stack" onSubmit={login.submit}>
@@ -53,6 +55,27 @@ function LoginCard({ login, verification, onSignupNavigate }) {
         </div>
       </form>
 
+      <div className="section-divider" />
+
+      <section className="provider-panel">
+        <div>
+          <p className="card-kicker">Second option</p>
+          <h3>Login with Amazon Cognito</h3>
+          <p className="helper-text">
+            Redirects to the Cognito managed login page, then comes back here
+            and finishes local 2FA only if this account already requires it.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          className="ghost-button provider-button"
+          onClick={cognito.login}
+        >
+          Continue with Cognito
+        </button>
+      </section>
+
       {verification.required ? (
         <>
           <div className="section-divider" />
@@ -61,7 +84,11 @@ function LoginCard({ login, verification, onSignupNavigate }) {
             <div>
               <p className="card-kicker">Second step</p>
               <h3>Verify 2FA login</h3>
-              <p className="helper-text">User ID: {verification.userId}</p>
+              <p className="helper-text">
+                {isCognitoVerification
+                  ? 'Cognito sign-in succeeded. Finish the app 2FA check with your authenticator code.'
+                  : `User ID: ${verification.userId}`}
+              </p>
             </div>
 
             <label className="field">

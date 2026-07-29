@@ -2,6 +2,9 @@ export const DEFAULT_API_URL =
   process.env.REACT_APP_API_URL || 'http://localhost:3000';
 
 export const STORAGE_KEY = 'authenticationapp.accessToken';
+export const PROVIDER_STORAGE_KEY = 'authenticationapp.authProvider';
+export const LOCAL_AUTH_PROVIDER = 'local';
+export const COGNITO_AUTH_PROVIDER = 'cognito';
 
 export function createRegisterForm() {
   return {

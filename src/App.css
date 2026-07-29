@@ -339,6 +339,20 @@ button:disabled {
   border: 1px dashed rgba(15, 106, 91, 0.18);
 }
 
+.provider-panel {
+  display: grid;
+  gap: 16px;
+  align-items: center;
+  padding: 18px;
+  border-radius: var(--radius-lg);
+  background: rgba(255, 253, 249, 0.84);
+  border: 1px solid rgba(15, 67, 59, 0.08);
+}
+
+.provider-button {
+  width: fit-content;
+}
+
 .route-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));

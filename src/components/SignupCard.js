@@ -1,4 +1,4 @@
-function SignupCard({ register, onLoginNavigate }) {
+function SignupCard({ register, cognito, onLoginNavigate }) {
   return (
     <article className="card">
       <div className="card-heading">
@@ -9,8 +9,8 @@ function SignupCard({ register, onLoginNavigate }) {
       </div>
 
       <p className="card-intro">
-        Register here first. After the API accepts the new user, the app sends
-        you to the login page with your email already filled in.
+        Choose the existing local registration form or send the user to Amazon
+        Cognito managed signup without removing your current auth flow.
       </p>
 
       <form className="stack" onSubmit={register.submit}>
@@ -61,6 +61,27 @@ function SignupCard({ register, onLoginNavigate }) {
           </button>
         </div>
       </form>
+
+      <div className="section-divider" />
+
+      <section className="provider-panel">
+        <div>
+          <p className="card-kicker">Second option</p>
+          <h3>Signup with Amazon Cognito</h3>
+          <p className="helper-text">
+            Opens the Cognito hosted signup page, then returns to this app and
+            keeps the same protected profile workflow.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          className="ghost-button provider-button"
+          onClick={cognito.signup}
+        >
+          Continue with Cognito
+        </button>
+      </section>
     </article>
   );
 }

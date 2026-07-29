@@ -51,6 +51,21 @@ function App() {
     setPathname(activePath);
   }, [activePath, pathname]);
 
+  useEffect(() => {
+    if (!dashboard.redirectRoute) {
+      return;
+    }
+
+    const normalizedRoute = normalizeRoute(dashboard.redirectRoute);
+
+    if (window.location.pathname !== normalizedRoute) {
+      window.history.replaceState({}, '', normalizedRoute);
+    }
+
+    setPathname(normalizedRoute);
+    dashboard.consumeRedirectRoute();
+  }, [dashboard]);
+
   function navigate(nextPath, options = {}) {
     const normalizedRoute = normalizeRoute(nextPath);
 
@@ -115,6 +130,7 @@ function App() {
       return (
         <section className="page-grid">
           <SignupCard
+            cognito={dashboard.cognito}
             register={routedRegister}
             onLoginNavigate={() => navigate(APP_ROUTES.login)}
           />
@@ -127,6 +143,7 @@ function App() {
       return (
         <section className="page-grid">
           <LoginCard
+            cognito={dashboard.cognito}
             login={routedLogin}
             verification={routedVerification}
             onSignupNavigate={() => navigate(APP_ROUTES.signup)}
@@ -153,6 +170,7 @@ function App() {
       <section className="page-grid">
         <DashboardOverview
           accessToken={dashboard.accessToken}
+          authProvider={dashboard.authProvider}
           sessionState={dashboard.sessionState}
           verificationRequired={dashboard.verification.required}
           onNavigate={navigate}
@@ -166,6 +184,7 @@ function App() {
     <main className="app-shell">
       <HeroPanel
         apiBaseUrl={dashboard.apiBaseUrl}
+        authProvider={dashboard.authProvider}
         onApiBaseUrlChange={dashboard.setApiBaseUrl}
         sessionState={dashboard.sessionState}
         onClearSession={dashboard.clearSession}

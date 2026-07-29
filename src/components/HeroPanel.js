@@ -1,10 +1,18 @@
 function HeroPanel({
   apiBaseUrl,
+  authProvider,
   onApiBaseUrlChange,
   sessionState,
   onClearSession,
   canClearSession,
 }) {
+  const providerLabel =
+    authProvider === 'cognito'
+      ? 'Amazon Cognito'
+      : authProvider
+        ? 'Local API'
+        : 'No provider yet';
+
   return (
     <section className="hero-panel">
       <div className="hero-copy">
@@ -12,8 +20,8 @@ function HeroPanel({
         <h1>Authentication Frontend</h1>
         <p className="hero-text">
           Move through dedicated routes for signup, login, dashboard, and
-          profile while keeping the same NestJS auth API and 2FA workflow
-          behind the scenes.
+          profile while keeping your original NestJS auth API and adding Amazon
+          Cognito as an alternate login and signup provider.
         </p>
       </div>
 
@@ -32,6 +40,7 @@ function HeroPanel({
           <div>
             <p className="session-label">Session</p>
             <strong>{sessionState}</strong>
+            <p className="helper-text">Current provider: {providerLabel}</p>
           </div>
           <button
             type="button"
